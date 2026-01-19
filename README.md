@@ -6,7 +6,7 @@ Write Bukkit/Spigot/Paper plugins in Scala 3 with minimal boilerplate.
 
 - **Tiny JAR size**: ~25KB per plugin (Scala runtime shared across all plugins)
 - **Auto runtime download**: Scala libraries downloaded on first server start
-- **Zero boilerplate**: No need to extend JavaPlugin, just write Scala code
+- **Zero boilerplate**: Just extend `BukkitPlugin` trait
 - **All Bukkit versions**: Works with Bukkit, Spigot, Paper (1.8+)
 
 ## Quick Start
@@ -87,16 +87,22 @@ Write Bukkit/Spigot/Paper plugins in Scala 3 with minimal boilerplate.
 ```scala
 package com.example
 
-import org.bukkit.plugin.java.JavaPlugin
+import dev.nailed.bukkit.scala.BukkitPlugin
+import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.event.player.PlayerJoinEvent
 
-class MyPlugin:
-  var plugin: JavaPlugin = _  // Injected by SDK
+class MyPlugin extends BukkitPlugin with Listener:
   
-  def onEnable(): Unit =
-    plugin.getLogger.info("Hello from Scala 3!")
+  override def onEnable(): Unit =
+    info("Hello from Scala 3!")
+    registerEvents()
 
-  def onDisable(): Unit =
-    plugin.getLogger.info("Goodbye!")
+  override def onDisable(): Unit =
+    info("Goodbye!")
+
+  @EventHandler
+  def onPlayerJoin(event: PlayerJoinEvent): Unit =
+    event.getPlayer.sendMessage("§aWelcome!")
 ```
 
 ### 4. Create plugin.yml
@@ -110,6 +116,40 @@ api-version: 1.16
 
 That's it! The Maven plugin automatically generates a bootstrap class.
 
+## BukkitPlugin Trait
+
+The `BukkitPlugin` trait provides convenient accessors:
+
+```scala
+trait BukkitPlugin:
+  // Lifecycle methods - override these
+  def onEnable(): Unit
+  def onDisable(): Unit
+  def onLoad(): Unit
+  
+  // Convenient accessors
+  def plugin: JavaPlugin      // The underlying JavaPlugin
+  def logger: Logger          // Plugin logger
+  def server: Server          // Bukkit server
+  def dataFolder: File        // Plugin data folder
+  def config: FileConfiguration
+  def pluginManager: PluginManager
+  
+  // Helper methods
+  def saveConfig(): Unit
+  def saveDefaultConfig(): Unit
+  def reloadConfig(): Unit
+  def getCommand(name: String): PluginCommand
+  
+  // Logging shortcuts
+  def info(msg: String): Unit
+  def warn(msg: String): Unit
+  def severe(msg: String): Unit
+  
+  // Auto-register as Listener if implemented
+  def registerEvents(): Unit
+```
+
 ## How It Works
 
 1. Maven plugin reads `main` from plugin.yml
@@ -117,7 +157,7 @@ That's it! The Maven plugin automatically generates a bootstrap class.
 3. Updates plugin.yml to point to the bootstrap class
 4. At runtime, bootstrap downloads Scala libraries to `libraries/scala/`
 5. Scala libraries are injected into ClassLoader
-6. Your Scala class is instantiated and `plugin` field is injected
+6. Your Scala class is instantiated and `_plugin` field is injected
 
 ## Runtime Structure
 
