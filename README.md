@@ -7,13 +7,21 @@ Write Bukkit/Spigot/Paper plugins in Scala 3 with minimal boilerplate.
 - **Tiny JAR size**: ~25KB per plugin (Scala runtime shared across all plugins)
 - **Auto runtime download**: Scala libraries downloaded on first server start
 - **Zero boilerplate**: Just extend `BukkitPlugin` trait
-- **All Bukkit versions**: Works with Bukkit, Spigot, Paper (1.8+)
+- **All Bukkit versions**: Works with Bukkit, Spigot, Paper (1.8-1.21+)
+- **Java 8-21 support**: Compatible with all modern Java versions
 
 ## Quick Start
 
-### 1. Add dependencies to pom.xml
+### 1. Add repository and dependencies to pom.xml
 
 ```xml
+<repositories>
+    <repository>
+        <id>nailed-repo</id>
+        <url>https://repo.nailed.dev/repository/maven-releases/</url>
+    </repository>
+</repositories>
+
 <dependencies>
     <dependency>
         <groupId>dev.nailed</groupId>
@@ -29,11 +37,17 @@ Write Bukkit/Spigot/Paper plugins in Scala 3 with minimal boilerplate.
 </dependencies>
 ```
 
-### 2. Add build plugins
+### 2. Add plugin repository and build plugins
 
 ```xml
 <build>
     <sourceDirectory>src/main/scala</sourceDirectory>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>nailed-repo</id>
+            <url>https://repo.nailed.dev/repository/maven-releases/</url>
+        </pluginRepository>
+    </pluginRepositories>
     <plugins>
         <!-- Generate bootstrap -->
         <plugin>
@@ -156,8 +170,13 @@ trait BukkitPlugin:
 2. Generates `MyPlugin$$Bootstrap.java` that extends JavaPlugin
 3. Updates plugin.yml to point to the bootstrap class
 4. At runtime, bootstrap downloads Scala libraries to `libraries/scala/`
-5. Scala libraries are injected into ClassLoader
-6. Your Scala class is instantiated and `_plugin` field is injected
+5. Creates a custom `ScalaPluginClassLoader` for each plugin
+6. Your Scala class is loaded and `_plugin` field is injected
+
+The custom ClassLoader ensures:
+- Scala classes are loaded from our JARs (not parent ClassLoader)
+- Bukkit API is shared with other plugins
+- No JVM flags needed on any Java version
 
 ## Runtime Structure
 
@@ -170,6 +189,25 @@ server/
         ├── scala3-library_3-3.3.1.jar    # ~1.2MB (shared)
         └── scala-library-2.13.12.jar     # ~5.8MB (shared)
 ```
+
+## Java Version Compatibility
+
+The SDK supports Java 8-21 without any special JVM flags. It uses a custom ClassLoader architecture that works on all Java versions:
+
+- **Java 8-15**: Standard URLClassLoader injection
+- **Java 16-21**: Custom ScalaPluginClassLoader (no `--add-opens` needed)
+
+No configuration required - just drop your plugin JAR and it works.
+
+## Supported Server Versions
+
+| Server | Versions | Notes |
+|--------|----------|-------|
+| Bukkit/CraftBukkit | 1.8+ | Full support |
+| Spigot | 1.8+ | Full support |
+| Paper | 1.8-1.21+ | Uses native `addToClasspath` on 1.19.3+ |
+| Purpur | 1.16+ | Full support |
+| Folia | 1.19.4+ | Full support |
 
 ## License
 

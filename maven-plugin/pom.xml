@@ -20,6 +20,17 @@
         </license>
     </licenses>
 
+    <distributionManagement>
+        <repository>
+            <id>nailed-releases</id>
+            <url>https://repo.nailed.dev/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nailed-snapshots</id>
+            <url>https://repo.nailed.dev/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
